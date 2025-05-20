@@ -221,20 +221,55 @@ WHERE M.STUDIO_ID IN (SELECT S.STUDIO_ID
 					FROM PUBLIC.STUDIOS s
 					WHERE S.STUDIO_ACTIVE = '0');
 
--- 32- Indica el nombre, ciudad, y teléfono de todos los miembros de la plataforma que hayan accedido películas que hayan sido nominadas a más de 150 premios y ganaran menos de 50
+-- 32- Indica el nombre, ciudad, y teléfono de todos los miembros de la plataforma 
+-- que hayan accedido películas que hayan sido nominadas a más de 150 premios y ganaran menos de 50
 
+SELECT u.USER_NAME AS NAME, U.USER_TOWN AS TOWN, U.USER_PHONE AS PRHONE_NUMBER
+FROM PUBLIC.USERS u JOIN PUBLIC.USER_MOVIE_ACCESS uma ON U.USER_ID = UMA.USER_ID
+JOIN PUBLIC.MOVIES m ON m.MOVIE_ID = uma.MOVIE_ID
+WHERE m.MOVIE_ID IN (SELECT AW.MOVIE_ID 
+					FROM PUBLIC.AWARDS AW 
+					WHERE 
+						AW.AWARD_NOMINATION > 150 AND 
+           				AW.AWARD_WIN < 50);
 
 -- 33- Comprueba si hay errores en la BD entre las películas y directores (un director muerto en el 76 no puede dirigir una película en el 88)
 
+SELECT M.MOVIE_NAME AS TITLE, M.MOVIE_RELEASE_DATE AS RELEASE_DATE, D.DIRECTOR_NAME AS DIRECTOR, D.DIRECTOR_DEAD_DATE AS DIRECTOR_DEATH
+FROM PUBLIC.MOVIES m JOIN PUBLIC.DIRECTORS d  
+ON d.DIRECTOR_ID = m.DIRECTOR_ID
+WHERE M.MOVIE_RELEASE_DATE > D.DIRECTOR_DEAD_DATE;
 
 -- 34- Utilizando la información de la sentencia anterior, modifica la fecha de defunción a un año más tarde del estreno de la película (mediante sentencia SQL)
 
+UPDATE PUBLIC.DIRECTORS D
+SET DIRECTOR_DEAD_DATE = (
+    SELECT DATEADD('DAY', 365, MAX(MOVIE_RELEASE_DATE))
+    FROM PUBLIC.MOVIES M
+    WHERE M.DIRECTOR_ID = D.DIRECTOR_ID
+      AND M.MOVIE_RELEASE_DATE > D.DIRECTOR_DEAD_DATE
+)
+WHERE EXISTS (
+    SELECT 1
+    FROM PUBLIC.MOVIES M1
+    WHERE M1.DIRECTOR_ID = D.DIRECTOR_ID
+      AND M1.MOVIE_RELEASE_DATE > D.DIRECTOR_DEAD_DATE
+);
 
 -- DIFICULTAD: Berserk mode (enunciados simples, mucha diversión…)
 -- 35- Indica cuál es el género favorito de cada uno de los directores cuando dirigen una película
 
+SELECT D.DIRECTOR_NAME AS DIRECTOR, G.GENRE_NAME AS GENRE
+FROM PUBLIC.DIRECTORS d JOIN PUBLIC.MOVIES m 
+ON D.DIRECTOR_ID = M.MOVIE_ID
+JOIN PUBLIC.GENRES g ON M.GENRE_ID = G.GENRE_ID
+GROUP BY G.GENRE_ID, D.DIRECTOR_ID
+ORDER BY D.DIRECTOR_NAME ASC;
 
 -- 36- Indica cuál es la nacionalidad favorita de cada uno de los estudios en la producción de las películas
 
 
+
 -- 37- Indica cuál fue la primera película a la que accedieron los miembros de la plataforma cuyos teléfonos tengan como último dígito el ID de alguna nacionalidad
+
+
